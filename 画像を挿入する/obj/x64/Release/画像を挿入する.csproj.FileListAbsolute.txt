@@ -1,0 +1,9 @@
+C:\Users\t\source\repos\画像を挿入する\画像を挿入する\bin\x64\Release\画像を挿入する.exe.config
+C:\Users\t\source\repos\画像を挿入する\画像を挿入する\bin\x64\Release\画像を挿入する.exe
+C:\Users\t\source\repos\画像を挿入する\画像を挿入する\bin\x64\Release\画像を挿入する.pdb
+C:\Users\t\source\repos\画像を挿入する\画像を挿入する\bin\x64\Release\DocumentFormat.OpenXml.dll
+C:\Users\t\source\repos\画像を挿入する\画像を挿入する\bin\x64\Release\DocumentFormat.OpenXml.xml
+C:\Users\t\source\repos\画像を挿入する\画像を挿入する\obj\x64\Release\画像を挿入する.csprojResolveAssemblyReference.cache
+C:\Users\t\source\repos\画像を挿入する\画像を挿入する\obj\x64\Release\画像を挿入する.csproj.CoreCompileInputs.cache
+C:\Users\t\source\repos\画像を挿入する\画像を挿入する\obj\x64\Release\画像を挿入する.exe
+C:\Users\t\source\repos\画像を挿入する\画像を挿入する\obj\x64\Release\画像を挿入する.pdb
