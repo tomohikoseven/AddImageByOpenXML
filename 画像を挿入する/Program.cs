@@ -46,13 +46,61 @@ namespace 画像を挿入する
             ,new Position(4590465,5083575)
         };
 
+        static string GetSaveFileName( string[] args, int i_nameOrdate )
+        {
+            String retFileName = "xxx";
+            if(i_nameOrdate == 2)
+            {
+                retFileName = "xxx";
+            }
+            else
+            {
+                retFileName = "xx月xx日";
+            }
+
+            if(args.Length == 0)
+            {
+                return retFileName;
+            }
+
+            foreach( string filePath in args)
+            {
+                string fileName = System.IO.Path.GetFileNameWithoutExtension(filePath);
+                char[] charSeparators = new char[] { ' ', '　' };
+                string[] fileNameList = fileName.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
+                if( fileNameList.Length == 1)
+                {
+                    continue;
+                }
+                else
+                {
+                    if( fileNameList.Length > 1 && i_nameOrdate == 2 )
+                    {
+                        retFileName = fileNameList[i_nameOrdate-1];
+                    }
+                    else if( fileNameList.Length > 2 && i_nameOrdate == 3)
+                    {
+                        retFileName = fileNameList[i_nameOrdate - 1];
+                    }
+                    break;
+                }
+            }
+
+            return retFileName;
+        }
+
         static void Main(string[] args)
         {
             //string fileName = @"C:\Users\t\Documents\07_OpenXML\template.pptx";
             //string fileNameCopy = @"C:\Users\t\Documents\07_OpenXML\template_1.pptx";
             string basePath = System.AppDomain.CurrentDomain.BaseDirectory;
-            string fileName = basePath + "◆◆◆邸　事前写真.pptx";
-            string fileNameCopy = basePath + "xxx邸　事前写真.pptx";
+            string templateFileName = "◆◆◆邸　事前写真.pptx";
+            string fileName = basePath + templateFileName;
+
+            string replaceName = null;
+            replaceName = GetSaveFileName(args, 2);
+            string insertDate = GetSaveFileName(args, 3);
+            string fileNameCopy = fileName.Replace("◆◆◆",replaceName);
             System.IO.File.Copy( fileName, fileNameCopy, true );
             //string[] imagePath = {@"C:\Users\t\Documents\07_OpenXML\image.png",
             //                        @"C:\Users\t\Documents\07_OpenXML\image2.png"};
