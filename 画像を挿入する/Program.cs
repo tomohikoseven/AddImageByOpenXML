@@ -73,7 +73,7 @@ namespace 画像を挿入する
                     continue;
                 }
                 else
-                {
+                { 
                     if( fileNameList.Length > 1 && i_nameOrdate == 2 )
                     {
                         retFileName = fileNameList[i_nameOrdate-1];
