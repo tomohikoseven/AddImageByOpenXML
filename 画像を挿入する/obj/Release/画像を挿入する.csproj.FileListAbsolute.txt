@@ -4,4 +4,3 @@ C:\Users\t\source\repos\画像を挿入する\画像を挿入する\bin\Release\
 C:\Users\t\source\repos\画像を挿入する\画像を挿入する\obj\Release\画像を挿入する.csproj.CoreCompileInputs.cache
 C:\Users\t\source\repos\画像を挿入する\画像を挿入する\obj\Release\画像を挿入する.exe
 C:\Users\t\source\repos\画像を挿入する\画像を挿入する\obj\Release\画像を挿入する.pdb
-C:\Users\t\source\repos\画像を挿入する\画像を挿入する\obj\Release\画像を挿入する.csprojResolveAssemblyReference.cache

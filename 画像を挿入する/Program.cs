@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
+using Drawing = DocumentFormat.OpenXml.Drawing;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -56,7 +57,8 @@ namespace 画像を挿入する
             }
             else
             {
-                retFileName = "xx月xx日";
+                DateTime dtNow = DateTime.Now;
+                retFileName = dtNow.Year + "年xx月xx日";
             }
 
             if(args.Length == 0)
@@ -92,79 +94,81 @@ namespace 画像を挿入する
 
         static void Main(string[] args)
         {
-            //string fileName = @"C:\Users\t\Documents\07_OpenXML\template.pptx";
-            //string fileNameCopy = @"C:\Users\t\Documents\07_OpenXML\template_1.pptx";
             string basePath = System.AppDomain.CurrentDomain.BaseDirectory;
+
             string templateFileName = "◆◆◆邸　事前写真.pptx";
             string fileName = basePath + templateFileName;
 
-            string replaceName = null;
-            replaceName = GetSaveFileName(args, 2);
+            // ファイル名
+            string replaceName = GetSaveFileName(args, 2);
+            // 撮影日付
             string insertDate = GetSaveFileName(args, 3);
+
+            // テンプレートから事前写真をCopyする
             string fileNameCopy = fileName.Replace("◆◆◆",replaceName);
             System.IO.File.Copy( fileName, fileNameCopy, true );
-            //string[] imagePath = {@"C:\Users\t\Documents\07_OpenXML\image.png",
-            //                        @"C:\Users\t\Documents\07_OpenXML\image2.png"};
+
+            // 写真の向き・回転
             List<ImagePath> imagePathList = null;
             imagePathList = ChkRotation(args);
+
+            // 写真の添付
             AddImage(fileNameCopy, imagePathList);
-            if (replaceName != "xxx")
-            {
-                InsertName(fileNameCopy, replaceName);
-            }
+
+            // お客様名と撮影日を追加する
+            InsertNameAndDate(fileNameCopy, replaceName, insertDate);
 
         }
 
-        private static void InsertName( string pptxPath, string insertName)
+        private static void InsertNameAndDate( string pptxPath, string insertName, string insertDate)
         {
-            using( PresentationDocument presentationDocument = PresentationDocument.Open(pptxPath, true))
+            using( PresentationDocument ppt = PresentationDocument.Open(pptxPath, true))
             {
-                if(presentationDocument == null)
+                if(ppt == null)
                 {
                     throw new ArgumentNullException("presentationDocument");
                 }
 
-                PresentationPart presentationPart = presentationDocument.PresentationPart;
+                PresentationPart part = ppt.PresentationPart;
+                OpenXmlElementList slideIds = part.Presentation.SlideIdList.ChildElements;
 
-                if( presentationPart != null && presentationPart.Presentation != null)
+                for( int index = 0; index < slideIds.Count(); index++)
                 {
-                    Presentation presentation = presentationPart.Presentation;
+                    // スライドを取得する
+                    string relId = (slideIds[index] as SlideId).RelationshipId;
+                    SlidePart slide = (SlidePart)part.GetPartById(relId);
 
-                    if(presentation.SlideIdList != null)
+                    if(slide != null)
                     {
-                        DocumentFormat.OpenXml.OpenXmlElementList slideIds = presentation.SlideIdList.ChildElements;
-                        for( int slideIndex = 1; slideIndex < slideIds.Count; slideIndex++)
+                        ShapeTree tree = slide.Slide.CommonSlideData.ShapeTree;
+
+                        //１番目の<s:sp>を取得する
+                        Shape shape = tree.GetFirstChild<Shape>();
+
+                        if( shape != null)
                         {
-                            string slidePartRelationshipId = (slideIds[slideIndex] as SlideId).RelationshipId;
+                            TextBody textBody = shape.TextBody;
+                            IEnumerable<Drawing.Paragraph> paragraphs = textBody.Descendants<Drawing.Paragraph>();
 
-                            SlidePart slidePart = (SlidePart)presentationPart.GetPartById(slidePartRelationshipId);
-
-                            if(slidePart == null)
+                            foreach( Drawing.Paragraph paragraph in paragraphs)
                             {
-                                throw new ArgumentNullException("slidePart");
-                            }
-
-                            if(slidePart.Slide != null)
-                            {
-                                foreach(DocumentFormat.OpenXml.Drawing.Paragraph paragraph in
-                                    slidePart.Slide.Descendants<DocumentFormat.OpenXml.Drawing.Paragraph>())
+                                foreach( var text in paragraph.Descendants<Drawing.Text>())
                                 {
-                                    StringBuilder paragraphText = new StringBuilder();
-
-                                    foreach(DocumentFormat.OpenXml.Drawing.Text text in
-                                        paragraph.Descendants<DocumentFormat.OpenXml.Drawing.Text>())
+                                    if(text.Text.Contains("様邸"))
                                     {
-                                        if ("様".Contains(text.Text))
-                                        {
-                                            text.Text = insertName + text.Text;
-                                        }
+                                        text.Text = insertName + text.Text;
+                                    }
+                                    else if (text.Text.Contains("年月日"))
+                                    {
+                                        text.Text = text.Text.Replace("年月日",insertDate);
                                     }
                                 }
                             }
-                            slidePart.Slide.Save();
                         }
+                        slide.Slide.Save();
                     }
                 }
+
             }
 
             return;
