@@ -224,9 +224,9 @@ namespace 画像を挿入する
                 //    .PresentationPart
                 //    .SlideParts.ToArray<SlidePart>();
  
-                int cnt = 0;
+                int cnt = 0;    // 画像の添付数
 
-                int j = 0;
+                int j = 0;  // 画像添付スライド位置
                 string relId = (slideIds[j] as SlideId).RelationshipId;
                 SlidePart slidePart = (SlidePart)presentationPart.GetPartById(relId);
 
@@ -340,9 +340,17 @@ namespace 画像を挿入する
 
                     if (cnt%6 == 5)
                     {
-                        j++;
-                        relId = (slideIds[j] as SlideId).RelationshipId;
-                        slidePart = (SlidePart)presentationPart.GetPartById(relId);
+                        if( j < slideCount - 1)
+                        {
+                            j++;
+                            relId = (slideIds[j] as SlideId).RelationshipId;
+                            slidePart = (SlidePart)presentationPart.GetPartById(relId);
+                        }
+                        else
+                        {
+                            // 画像ループを抜ける
+                            break;
+                        }
                     }
                     cnt++;
                 }
