@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace 画像を挿入する
 {
@@ -107,6 +108,66 @@ namespace 画像を挿入する
             List<ImagePath> imagePathList = null;
             imagePathList = ChkRotation(args);
             AddImage(fileNameCopy, imagePathList);
+            if (replaceName != "xxx")
+            {
+                InsertName(fileNameCopy, replaceName);
+            }
+
+        }
+
+        private static void InsertName( string pptxPath, string insertName)
+        {
+            using( PresentationDocument presentationDocument = PresentationDocument.Open(pptxPath, true))
+            {
+                if(presentationDocument == null)
+                {
+                    throw new ArgumentNullException("presentationDocument");
+                }
+
+                PresentationPart presentationPart = presentationDocument.PresentationPart;
+
+                if( presentationPart != null && presentationPart.Presentation != null)
+                {
+                    Presentation presentation = presentationPart.Presentation;
+
+                    if(presentation.SlideIdList != null)
+                    {
+                        DocumentFormat.OpenXml.OpenXmlElementList slideIds = presentation.SlideIdList.ChildElements;
+                        for( int slideIndex = 1; slideIndex < slideIds.Count; slideIndex++)
+                        {
+                            string slidePartRelationshipId = (slideIds[slideIndex] as SlideId).RelationshipId;
+
+                            SlidePart slidePart = (SlidePart)presentationPart.GetPartById(slidePartRelationshipId);
+
+                            if(slidePart == null)
+                            {
+                                throw new ArgumentNullException("slidePart");
+                            }
+
+                            if(slidePart.Slide != null)
+                            {
+                                foreach(DocumentFormat.OpenXml.Drawing.Paragraph paragraph in
+                                    slidePart.Slide.Descendants<DocumentFormat.OpenXml.Drawing.Paragraph>())
+                                {
+                                    StringBuilder paragraphText = new StringBuilder();
+
+                                    foreach(DocumentFormat.OpenXml.Drawing.Text text in
+                                        paragraph.Descendants<DocumentFormat.OpenXml.Drawing.Text>())
+                                    {
+                                        if ("様".Contains(text.Text))
+                                        {
+                                            text.Text = insertName + text.Text;
+                                        }
+                                    }
+                                }
+                            }
+                            slidePart.Slide.Save();
+                        }
+                    }
+                }
+            }
+
+            return;
         }
 
         private static List<ImagePath> ChkRotation( string[] paths )
@@ -151,10 +212,12 @@ namespace 画像を挿入する
 
         private static void AddImage(string file, List<ImagePath> image)
         {
-            using (var presentation = PresentationDocument.Open(file, true))
+            using (var presentationDocument = PresentationDocument.Open(file, true))
             {
-                var slideCount = presentation.PresentationPart.SlideParts.Count();
-                PresentationPart presentationPart = presentation.PresentationPart;
+                var slideCount = presentationDocument.PresentationPart.SlideParts.Count();
+                SlideIdList slideIdList = presentationDocument.PresentationPart.Presentation.SlideIdList;
+                Presentation presentation = presentationDocument.PresentationPart.Presentation;
+                PresentationPart presentationPart = presentationDocument.PresentationPart;
                 OpenXmlElementList slideIds = presentationPart.Presentation.SlideIdList.ChildElements;
 
                 //var slideParts = presentation
@@ -268,7 +331,6 @@ namespace 画像を挿入する
                         });
                     }
 
-
                     picture.ShapeProperties.Append(new DocumentFormat.OpenXml.Drawing.PresetGeometry
                     {
                         Preset = DocumentFormat.OpenXml.Drawing.ShapeTypeValues.Rectangle
@@ -285,7 +347,46 @@ namespace 画像を挿入する
                     cnt++;
                 }
 
+                for( int i = slideCount-1; i > j; i--)
+                {
+                    //Console.WriteLine(i);
+                    SlideId slideId = slideIds[i] as SlideId;
+                    string slideRelId = slideId.RelationshipId;
+                    slideIdList.RemoveChild(slideId);
 
+                    if( presentation.CustomShowList != null)
+                    {
+                        // Iterate through the list of custom shows.
+                        foreach (var customShow in presentation.CustomShowList.Elements<CustomShow>())
+                        {
+                            if (customShow.SlideList != null)
+                            {
+                                // Declare a link list of slide list entries.
+                                LinkedList<SlideListEntry> slideListEntries = new LinkedList<SlideListEntry>();
+                                foreach (SlideListEntry slideListEntry in customShow.SlideList.Elements())
+                                {
+                                    // Find the slide reference to remove from the custom show.
+                                    if (slideListEntry.Id != null && slideListEntry.Id == slideRelId)
+                                    {
+                                        slideListEntries.AddLast(slideListEntry);
+                                    }
+                                }
+
+                                // Remove all references to the slide from the custom show.
+                                foreach (SlideListEntry slideListEntry in slideListEntries)
+                                {
+                                    customShow.SlideList.RemoveChild(slideListEntry);
+                                }
+                            }
+                        }
+                    }
+                    presentation.Save();
+
+                    SlidePart slidePart2 = presentationPart.GetPartById(slideRelId) as SlidePart;
+
+                    presentationPart.DeletePart(slidePart2);
+
+                }
 
             }
         }
