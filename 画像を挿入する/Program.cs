@@ -69,7 +69,7 @@ namespace 画像を挿入する
             foreach( string filePath in args)
             {
                 string fileName = System.IO.Path.GetFileNameWithoutExtension(filePath);
-                char[] charSeparators = new char[] { ' ', '　' };
+                char[] charSeparators = new char[] { '_', '＿' };
                 string[] fileNameList = fileName.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
                 if( fileNameList.Length == 1)
                 {
