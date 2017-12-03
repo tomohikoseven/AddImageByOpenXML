@@ -1,13 +1,13 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
-using Drawing = DocumentFormat.OpenXml.Drawing;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Windows.Forms;
+using Drawing2 = DocumentFormat.OpenXml.Drawing;
 
 namespace 画像を挿入する
 {
@@ -92,8 +92,91 @@ namespace 画像を挿入する
             return retFileName;
         }
 
+        static int IsExpirationDate()
+        {
+            // NTPサーバへの接続用UDP生成
+            System.Net.Sockets.UdpClient objSck;
+            System.Net.IPEndPoint ipAny =
+                new System.Net.IPEndPoint(System.Net.IPAddress.Any, 0);
+            objSck = new System.Net.Sockets.UdpClient(ipAny);
+
+            // NTPサーバへのリクエスト送信
+            Byte[] sdat = new Byte[48];
+            sdat[0] = 0xB;
+            Byte[] rdat = null;
+            try
+            {
+                objSck.Send(sdat, sdat.GetLength(0), "time.windows.com", 123);
+
+                // NTPサーバから日時データ受信
+                rdat = objSck.Receive(ref ipAny);
+            }
+            catch( Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                MessageBox.Show("ネットワークエラー","エラー",MessageBoxButtons.OK,MessageBoxIcon.Error);
+                return 99;
+            }
+            finally
+            {
+                objSck.Close();
+            }
+
+            // 1900年1月1日からの経過時間(日時分秒)
+            long lngAllS; // 1900年1月1日からの経過秒数
+            long lngD;    // 日
+            long lngH;    // 時
+            long lngM;    // 分
+            long lngS;    // 秒
+
+            // 1900年1月1日からの経過秒数計算
+            lngAllS = (long)(
+                      rdat[40] * Math.Pow(2, (8 * 3)) +
+                      rdat[41] * Math.Pow(2, (8 * 2)) +
+                      rdat[42] * Math.Pow(2, (8 * 1)) +
+                      rdat[43]);
+
+            // 1900年1月1日からの経過(日時分秒)計算
+            lngD = lngAllS / (24 * 60 * 60); // 日
+            lngS = lngAllS % (24 * 60 * 60); // 残りの秒数
+            lngH = lngS / (60 * 60);         // 時
+            lngS = lngS % (60 * 60);         // 残りの秒数
+            lngM = lngS / 60;                // 分
+            lngS = lngS % 60;                // 秒
+
+            // 現在の日時(DateTime)計算
+            DateTime dtTime = new DateTime(1900, 1, 1);
+            dtTime = dtTime.AddDays(lngD);
+            dtTime = dtTime.AddHours(lngH);
+            dtTime = dtTime.AddMinutes(lngM);
+            dtTime = dtTime.AddSeconds(lngS);
+
+            // グリニッジ標準時から日本時間への変更
+            dtTime = dtTime.AddHours(9);
+
+            // 現在の日時の比較
+            return "20171231".CompareTo(dtTime.ToString("yyyyMMdd")); 
+        }
+
         static void Main(string[] args)
         {
+            if(args.Count() == 0)
+            {
+                MessageBox.Show("画像のパスを指定して実行してください。","実行エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            int isValid = 0;
+            isValid = IsExpirationDate();
+            if( isValid < 0)
+            {
+                MessageBox.Show("有効期限が切れました。", "実行エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }else if( isValid == 99)
+            {
+                return;
+            }
+
             string basePath = System.AppDomain.CurrentDomain.BaseDirectory;
 
             string templateFileName = "◆◆◆邸　事前写真.pptx";
@@ -148,11 +231,11 @@ namespace 画像を挿入する
                         if( shape != null)
                         {
                             TextBody textBody = shape.TextBody;
-                            IEnumerable<Drawing.Paragraph> paragraphs = textBody.Descendants<Drawing.Paragraph>();
+                            IEnumerable<Drawing2.Paragraph> paragraphs = textBody.Descendants<Drawing2.Paragraph>();
 
-                            foreach( Drawing.Paragraph paragraph in paragraphs)
+                            foreach( Drawing2.Paragraph paragraph in paragraphs)
                             {
-                                foreach( var text in paragraph.Descendants<Drawing.Text>())
+                                foreach( var text in paragraph.Descendants<Drawing2.Text>())
                                 {
                                     if(text.Text.Contains("様邸"))
                                     {
