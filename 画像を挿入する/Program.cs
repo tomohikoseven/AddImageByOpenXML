@@ -26,26 +26,37 @@ namespace 画像を挿入する
             }
         }
 
+        class Size
+        {
+            public int Width = 0;
+            public int Height = 0;
+            public static int _6cm = 3600 * 6 * 100;
+            public static int _8cm = 3600 * 8 * 100;
+
+        }
+
         struct ImagePath
         {
             public string Path;
             public RotateFlipType Rot;
+            public Size Size;
             
-            public ImagePath( string path, RotateFlipType rot)
+            public ImagePath( string path, RotateFlipType rot, Size size)
             {
                 this.Path = path;
                 this.Rot = rot;
+                this.Size = size;
             }
         }
 
         // 写真を貼る位置
         private static readonly Position[] POSITION = new Position[] { 
-           new Position(108000,1321200)
-            ,new Position(2348915,1321200)
-            ,new Position(4590465,1321200)
-            ,new Position(105460,5083575)
-            ,new Position(2348915,5083575)
-            ,new Position(4590465,5083575)
+           new Position(-229594, 1673928)
+            ,new Position(2011321,1673928)
+            ,new Position(4252871,1673928)
+            ,new Position(-229594,5364048)
+            ,new Position(2011321,5364048)
+            ,new Position(4252871,5364048)
         };
 
         static string GetSaveFileName( string[] args, int i_nameOrdate )
@@ -264,8 +275,26 @@ namespace 画像を挿入する
             foreach (string path in paths)
             {
                 // 元の画像を開く
-                using (var origin = new Bitmap(path))
+                using (Bitmap origin = new Bitmap(path))
                 {
+                    var height = origin.Size.Height;
+                    var width = origin.Size.Width;
+
+                    // 事前写真に貼り付ける画像のサイズ
+                    Size size = new Size();
+                    if (height > width)
+                    {
+                        // 縦長画像
+                        size.Width = Size._6cm ;
+                        size.Height = height * ( Size._6cm / width );
+                    }
+                    else
+                    {
+                        // 横長画像
+                        size.Width = width * ( Size._6cm / height );
+                        size.Height = Size._6cm;
+                    }
+
                     var rotation = RotateFlipType.RotateNoneFlipNone;
 
                     // 画像に付与されているEXIF情報を列挙する
@@ -291,7 +320,7 @@ namespace 画像を挿入する
                                 break;
                         }
                     }
-                    retList.Add(new ImagePath(path, rotation));
+                    retList.Add(new ImagePath(path, rotation, size));
                 }
             }
             return retList;
@@ -341,7 +370,7 @@ namespace 画像を挿入する
                     });
 
                     var nonVisualPictureDrawingProperties = new DocumentFormat.OpenXml.Presentation.NonVisualPictureDrawingProperties();
-                    nonVisualPictureDrawingProperties.Append(new DocumentFormat.OpenXml.Drawing.PictureLocks()
+                    nonVisualPictureDrawingProperties.Append(new Drawing2.PictureLocks()
                     {
                         NoChangeAspect = true
                     });
@@ -349,12 +378,12 @@ namespace 画像を挿入する
                     picture.NonVisualPictureProperties.Append(new DocumentFormat.OpenXml.Presentation.ApplicationNonVisualDrawingProperties());
 
                     var blipFill = new DocumentFormat.OpenXml.Presentation.BlipFill();
-                    var blip1 = new DocumentFormat.OpenXml.Drawing.Blip()
+                    var blip1 = new Drawing2.Blip()
                     {
                         Embed = slidePart.GetIdOfPart(part)
                     };
-                    var blipExtensionList1 = new DocumentFormat.OpenXml.Drawing.BlipExtensionList();
-                    var blipExtension1 = new DocumentFormat.OpenXml.Drawing.BlipExtension()
+                    var blipExtensionList1 = new Drawing2.BlipExtensionList();
+                    var blipExtension1 = new Drawing2.BlipExtension()
                     {
                         Uri = "{28A0092B-C50C-407E-A947-70E740481C1C}"
                     };
@@ -366,14 +395,14 @@ namespace 画像を挿入する
                     blipExtension1.Append(useLocalDpi1);
                     blipExtensionList1.Append(blipExtension1);
                     blip1.Append(blipExtensionList1);
-                    var stretch = new DocumentFormat.OpenXml.Drawing.Stretch();
-                    stretch.Append(new DocumentFormat.OpenXml.Drawing.FillRectangle());
+                    var stretch = new Drawing2.Stretch();
+                    stretch.Append(new Drawing2.FillRectangle());
                     blipFill.Append(blip1);
                     blipFill.Append(stretch);
                     picture.Append(blipFill);
 
                     picture.ShapeProperties = new DocumentFormat.OpenXml.Presentation.ShapeProperties();
-                    picture.ShapeProperties.Transform2D = new DocumentFormat.OpenXml.Drawing.Transform2D();
+                    picture.ShapeProperties.Transform2D = new Drawing2.Transform2D();
 
                     int rotation = 0;
                     switch (imgPath.Rot)
@@ -395,32 +424,22 @@ namespace 画像を挿入する
                             break;
                     }
                     picture.ShapeProperties.Transform2D.Rotation = rotation;
-                    picture.ShapeProperties.Transform2D.Append(new DocumentFormat.OpenXml.Drawing.Offset
+                    picture.ShapeProperties.Transform2D.Append(new Drawing2.Offset
                     {
                         X = POSITION[cnt%6].X,
                         Y = POSITION[cnt%6].Y,
                     });
 
                     // 縦向き
-                    if(imgPath.Rot == RotateFlipType.RotateNoneFlipNone || imgPath.Rot == RotateFlipType.Rotate180FlipNone){
-                        picture.ShapeProperties.Transform2D.Append(new DocumentFormat.OpenXml.Drawing.Extents
-                        {
-                            Cx = 3600 * 6 * 100,
-                            Cy = 3600 * 8 * 100,
-                        });
-                    }
-                    else // 横向き
+                    picture.ShapeProperties.Transform2D.Append(new Drawing2.Extents
                     {
-                        picture.ShapeProperties.Transform2D.Append(new DocumentFormat.OpenXml.Drawing.Extents
-                        {
-                            Cx = 3600 * 8 * 100,
-                            Cy = 3600 * 6 * 100,
-                        });
-                    }
+                        Cx = imgPath.Size.Width,
+                        Cy = imgPath.Size.Height,
+                    });
 
-                    picture.ShapeProperties.Append(new DocumentFormat.OpenXml.Drawing.PresetGeometry
+                    picture.ShapeProperties.Append(new Drawing2.PresetGeometry
                     {
-                        Preset = DocumentFormat.OpenXml.Drawing.ShapeTypeValues.Rectangle
+                        Preset = Drawing2.ShapeTypeValues.Rectangle
                     });
 
                     tree.Append(picture);
@@ -442,6 +461,7 @@ namespace 画像を挿入する
                     cnt++;
                 }
 
+                // スライドを削除する
                 for( int i = slideCount-1; i > j; i--)
                 {
                     //Console.WriteLine(i);
