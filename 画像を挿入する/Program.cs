@@ -50,7 +50,15 @@ namespace 画像を挿入する
         }
 
         // 写真を貼る位置
-        private static readonly Position[] POSITION = new Position[] { 
+        private static readonly Position[] POSITION0 = new Position[] { 
+           new Position(104775, 1322425)
+            ,new Position(2359195,1322425)
+            ,new Position(4613615,1322425)
+            ,new Position(104775,5364048)
+            ,new Position(2359195,5364048)
+            ,new Position(4613615,5364048)
+        };
+        private static readonly Position[] POSITION90 = new Position[] { 
            new Position(-229594, 1673928)
             ,new Position(2011321,1673928)
             ,new Position(4252871,1673928)
@@ -336,10 +344,6 @@ namespace 画像を挿入する
                 PresentationPart presentationPart = presentationDocument.PresentationPart;
                 OpenXmlElementList slideIds = presentationPart.Presentation.SlideIdList.ChildElements;
 
-                //var slideParts = presentation
-                //    .PresentationPart
-                //    .SlideParts.ToArray<SlidePart>();
- 
                 int cnt = 0;    // 画像の添付数
 
                 int j = 0;  // 画像添付スライド位置
@@ -409,26 +413,46 @@ namespace 画像を挿入する
                     {
                         case RotateFlipType.RotateNoneFlipNone:
                             rotation = 0;
+                            picture.ShapeProperties.Transform2D.Append(new Drawing2.Offset
+                            {
+                                X = POSITION0[cnt%6].X,
+                                Y = POSITION0[cnt%6].Y,
+                            });
                             break;
                         case RotateFlipType.Rotate180FlipNone: // 時計回りに180度回転しているので、180度回転して戻す
                             rotation = 60000 * 180;
+                            picture.ShapeProperties.Transform2D.Append(new Drawing2.Offset
+                            {
+                                X = POSITION0[cnt%6].X,
+                                Y = POSITION0[cnt%6].Y,
+                            });
                             break;
                         case RotateFlipType.Rotate90FlipNone: // 時計回りに270度回転しているので、90度回転して戻す
                             rotation = 60000 * 90;
+                            picture.ShapeProperties.Transform2D.Append(new Drawing2.Offset
+                            {
+                                X = POSITION90[cnt%6].X,
+                                Y = POSITION90[cnt%6].Y,
+                            });
                             break;
                         case RotateFlipType.Rotate270FlipNone: // 時計回りに90度回転しているので、270度回転して戻す
                             rotation = 60000 * 270;
+                            picture.ShapeProperties.Transform2D.Append(new Drawing2.Offset
+                            {
+                                X = POSITION90[cnt%6].X,
+                                Y = POSITION90[cnt%6].Y,
+                            });
                             break;
                         default:
                             rotation = 0;
+                            picture.ShapeProperties.Transform2D.Append(new Drawing2.Offset
+                            {
+                                X = POSITION0[cnt%6].X,
+                                Y = POSITION0[cnt%6].Y,
+                            });
                             break;
                     }
                     picture.ShapeProperties.Transform2D.Rotation = rotation;
-                    picture.ShapeProperties.Transform2D.Append(new Drawing2.Offset
-                    {
-                        X = POSITION[cnt%6].X,
-                        Y = POSITION[cnt%6].Y,
-                    });
 
                     // 縦向き
                     picture.ShapeProperties.Transform2D.Append(new Drawing2.Extents
