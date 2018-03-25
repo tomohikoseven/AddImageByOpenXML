@@ -185,20 +185,20 @@ namespace 画像を挿入する
                 return;
             }
 
-            int isValid = 0;
-            isValid = IsExpirationDate();
-            if( isValid < 0)
-            {
-                MessageBox.Show("有効期限が切れました。", "実行エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }else if( isValid == 99)
-            {
-                return;
-            }
+            //int isValid = 0;
+            //isValid = IsExpirationDate();
+            //if( isValid < 0)
+            //{
+            //    MessageBox.Show("有効期限が切れました。", "実行エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            //    return;
+            //}else if( isValid == 99)
+            //{
+            //    return;
+            //}
 
             string basePath = System.AppDomain.CurrentDomain.BaseDirectory;
 
-            string templateFileName = "◆◆◆邸　事前写真.pptx";
+            string templateFileName = "◆◆◆邸　着工前写真.pptx";
             string fileName = basePath + templateFileName;
 
             // ファイル名
